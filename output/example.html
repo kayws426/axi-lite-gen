@@ -1,0 +1,88 @@
+<html>
+<head><title>example Memory Map Documentation</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<style type="text/css">
+.error {padding: 15px; background-color: yellow; border: 4px solid orange; color:red;}
+table {border: 1px solid black; border-collapse: collapse; border-spacing:2px;}
+th, td {border-width: 1px; border-style: inset; border-color: gray; padding: 2px;}
+dt {font-weight: bold;}
+.code {color: white; background-color: black; border: 3px gray solid; 
+    width: 640px; padding: 3px; margin-left: 10px;}
+</style>
+</head>
+<body style="margin: 25px; font-family: helvetica;"> 
+<a name="top"><h1 style="border-bottom: 2px solid; margin-bottom: 2px;">
+example Memory Map Documentation</h1></a>
+<i style="font-size:smaller;">
+<a href="#meta">meta</a> - 
+<a href="#general">general</a> - 
+Last updated [2016-02-29 01:53:39] by kayws426
+</i><br>
+<p>
+
+<a name="meta"><h2>meta</h2></a>
+<table>
+  <tr><th>Memory Address</th>
+      <th>Bits</th>
+      <th>Mode</th>
+      <th>Shortname</th>
+      <th>What</th></tr>
+  <tr><td><pre>0x00000000</pre></td>
+      <td><pre>32</pre></td>
+      <td><pre>p</pre></td>
+      <td>magic</td>
+      <td>Core-Specific Magic Number (0x0002_1EAF)</td></tr>
+  <tr><td><pre>0x00000004</pre></td>
+      <td><pre>32</pre></td>
+      <td><pre>p</pre></td>
+      <td>version</td>
+      <td>Core version number</td></tr>
+  <tr><td><pre>0x00000008</pre></td>
+      <td><pre>32</pre></td>
+      <td><pre>p</pre></td>
+      <td>feature_flags</td>
+      <td>Feature flags (or zero)</td></tr>
+  <tr><td><pre>0x0000000C</pre></td>
+      <td><pre>32</pre></td>
+      <td><pre>p</pre></td>
+      <td>git_hash</td>
+      <td>HDL Git commit hash stub, or 0 (32bits)</td></tr>
+  <tr><td><pre>0x00000010</pre></td>
+      <td><pre>64</pre></td>
+      <td><pre>p</pre></td>
+      <td>build_time</td>
+      <td>UNIX time of build</td></tr>
+</table><a name="general"><h2>general</h2></a>
+<table>
+  <tr><th>Memory Address</th>
+      <th>Bits</th>
+      <th>Mode</th>
+      <th>Shortname</th>
+      <th>What</th></tr>
+  <tr><td><pre>0x00001000</pre></td>
+      <td><pre>1</pre></td>
+      <td><pre>rw</pre></td>
+      <td>enable</td>
+      <td></td></tr>
+  <tr><td><pre>0x00001004</pre></td>
+      <td><pre>33</pre></td>
+      <td><pre>rw</pre></td>
+      <td>output_en</td>
+      <td></td></tr>
+  <tr><td><pre>0x0000100C</pre></td>
+      <td><pre>16</pre></td>
+      <td><pre>rw</pre></td>
+      <td>ring_count</td>
+      <td>Count of doorbell rings</td></tr>
+  <tr><td><pre>0x00001010</pre></td>
+      <td><pre>16</pre></td>
+      <td><pre>r</pre></td>
+      <td>ring_counta</td>
+      <td>Count of doorbell rings</td></tr>
+  <tr><td><pre>0x00001014</pre></td>
+      <td><pre>16</pre></td>
+      <td><pre>r</pre></td>
+      <td>ring_countb</td>
+      <td>Count of doorbell rings</td></tr>
+</table>
+</body></html>
