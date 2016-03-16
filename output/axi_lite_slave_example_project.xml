@@ -1,0 +1,24 @@
+<project>
+    <config simulation_directory='simulation'/>
+    <config synthesis_directory='synthesis'/>
+    <config simulator='iverilog'/>
+    <config synthesiser='vivado'/>
+    <config part='xc7z030sbg485-2'/>
+
+    <unittest path='basic_unit_test.py'/>
+
+    <!-- Used by the ISE synthesis flow only -->
+    <constraints path='example.ucf' flow='ise'/>
+    <!-- Used by the Vivado synthesis flow only -->
+    <constraints path='example.xdc' flow='vivado'/>
+
+    <generic data_width='3'/>
+
+    <library name='lib_example'>
+        <file path='axi_lite_slave_example.v'/>
+    </library>
+
+    <library name='lib_tb_example' synthesise='false'>
+        <file path='tb_axi_lite_slave_example.v'/>
+    </library>
+</project>

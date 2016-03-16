@@ -42,7 +42,7 @@ module axi_lite_slave_example #
     output wire s_axi_bvalid,
     input wire s_axi_bready,
     input wire [C_S_AXI_ADDR_WIDTH-1:0] s_axi_araddr,
-    input wire [2:0] s00_axi_arprot,
+    input wire [2:0] s_axi_arprot,
     input wire s_axi_arvalid,
     output wire s_axi_arready,
     output wire [C_S_AXI_DATA_WIDTH-1:0] s_axi_rdata,
@@ -71,10 +71,25 @@ end
 wire slv_reg_wren;
 wire slv_reg_rden;
 reg [C_S_AXI_DATA_WIDTH-1:0] reg_data_out;
-// reg [C_S_AXI_DATA_WIDTH-1:0] axi_wdata;
-reg [C_S_AXI_DATA_WIDTH-1:0] axi_rdata;
+reg [C_S_AXI_DATA_WIDTH-1:0] axi_wdata;
 reg [C_S_AXI_ADDR_WIDTH-1:0] axi_araddr;
 
+reg axi_awready;
+reg axi_wready;
+reg [1:0] axi_bresp;
+reg axi_bvalid;
+reg axi_arready;
+reg [1:0] axi_rresp;
+reg axi_rvalid;
+
+assign s_axi_awready = axi_awready;
+assign s_axi_wready = axi_wready;
+assign s_axi_bresp = axi_bresp;
+assign s_axi_bvalid = axi_bvalid;
+assign s_axi_arready = axi_arready;
+assign s_axi_rdata = reg_data_out;
+assign s_axi_rresp = axi_rresp;
+assign s_axi_rvalid = axi_rvalid;
 
 // This block handles writes
 assign slv_reg_wren = s_axi_wready && s_axi_wvalid && s_axi_awready && s_axi_awvalid;
@@ -85,7 +100,7 @@ always @(posedge s_axi_aclk) begin
         ring_count <= DEFAULT_RING_COUNT;
     end else begin
         if (slv_reg_wren) begin
-            casex (s_axi_awaddr[C_S_AXI_ADDR_MSB-1:C_S_AXI_ADDR_LSB])
+            casex (s_axi_awaddr[C_S_AXI_ADDR_MSB:C_S_AXI_ADDR_LSB])
             14'd1024: begin
                 enable <= s_axi_wdata;
             end
@@ -109,13 +124,13 @@ always @(posedge s_axi_aclk) begin
 end
 
 // This block handles reads
-assign slv_reg_rden = axi_arready & s_axi_arvalid & ~axi_rvalid;
+assign slv_reg_rden = s_axi_arready & s_axi_arvalid & ~s_axi_rvalid;
 always @(posedge s_axi_aclk) begin
     if (s_axi_aresetn == 1'b0) begin
         reg_data_out <= 0;
     end else if (slv_reg_rden) begin
         // Read address mux
-        casex ( axi_araddr[C_S_AXI_ADDR_MSB-1:C_S_AXI_ADDR_LSB] )
+        casex ( s_axi_araddr[C_S_AXI_ADDR_MSB:C_S_AXI_ADDR_LSB] )
         14'd1024: begin
             reg_data_out <= {31'd0, enable};
         end
@@ -141,20 +156,19 @@ always @(posedge s_axi_aclk) begin
     end
 end
 
-
-// Implement s_axi_awready generation
+// Implement axi_awready generation
 always @( posedge s_axi_aclk ) begin
     if ( s_axi_aresetn == 1'b0 ) begin
-        s_axi_awready <= 1'b0;
+        axi_awready <= 1'b0;
     end else begin
-        if (~s_axi_awready && s_axi_awvalid && s_axi_wvalid) begin
+        if (~axi_awready && s_axi_awvalid && s_axi_wvalid) begin
             // slave is ready to accept write address when
             // there is a valid write address and write data
             // on the write address and data bus. This design
             // expects no outstanding transactions.
-            s_axi_awready <= 1'b1;
+            axi_awready <= 1'b1;
         end else begin
-            s_axi_awready <= 1'b0;
+            axi_awready <= 1'b0;
         end
     end
 end
@@ -171,19 +185,73 @@ end
 //     end
 // end
 
-// Implement s_axi_wready generation
+// Implement axi_wready generation
 always @( posedge s_axi_aclk ) begin
     if ( s_axi_aresetn == 1'b0 ) begin
-        s_axi_wready <= 1'b0;
+        axi_wready <= 1'b0;
     end else begin
-        if (~s_axi_wready && s_axi_wvalid && s_axi_awvalid) begin
+        if (~axi_wready && s_axi_wvalid && s_axi_awvalid) begin
             // slave is ready to accept write data when
             // there is a valid write address and write data
             // on the write address and data bus. This design
             // expects no outstanding transactions.
-            s_axi_wready <= 1'b1;
+            axi_wready <= 1'b1;
         end else begin
-            s_axi_wready <= 1'b0;
+            axi_wready <= 1'b0;
+        end
+    end
+end
+
+// Implement write response logic generation
+always @( posedge s_axi_aclk ) begin
+    if ( s_axi_aresetn == 1'b0 ) begin
+        axi_bvalid <= 0;
+        axi_bresp  <= 2'b0;
+    end else begin
+        if (s_axi_awready && s_axi_awvalid && ~axi_bvalid && s_axi_wready && s_axi_wvalid) begin
+            // indicates a valid write response is available
+            axi_bvalid <= 1'b1;
+            axi_bresp  <= 2'b0; // 'OKAY' response
+            // work error responses in future
+        end else begin
+            if (s_axi_bready && axi_bvalid) begin
+                //check if bready is asserted while bvalid is high)
+                //(there is a possibility that bready is always asserted high)
+                axi_bvalid <= 1'b0;
+            end
+        end
+    end
+end   
+
+
+// Implement axi_arready generation
+always @( posedge s_axi_aclk ) begin
+    if ( s_axi_aresetn == 1'b0 ) begin
+        axi_arready <= 1'b0;
+        // axi_araddr  <= 32'b0;
+    end else begin
+        if (~axi_arready && s_axi_arvalid) begin
+            // indicates that the slave has acceped the valid read address
+            axi_arready <= 1'b1;
+            // Read address latching
+            // axi_araddr  <= s_axi_araddr;
+        end else begin
+            axi_arready <= 1'b0;
+        end
+    end
+end
+
+// Implement s_axi_rvalid generation
+always @( posedge s_axi_aclk ) begin
+    if ( s_axi_aresetn == 1'b0 ) begin
+        axi_rvalid <= 1'b0;
+        axi_rresp <= 2'b0;
+    end else begin
+        if (s_axi_arready && s_axi_arvalid && ~axi_rvalid) begin
+            axi_rvalid <= 1'b1;
+            axi_rresp  <= 2'b0; // 'OKAY' response
+        end else if (axi_rvalid && s_axi_rready) begin
+            axi_rvalid <= 2'b0;
         end
     end
 end

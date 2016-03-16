@@ -1,0 +1,83 @@
+"""
+This script provides an example of how to use the ChipTools scripted flow.
+"""
+import os
+try:
+    # Import the Project class from chiptools.core.project
+    from chiptools.core.project import Project
+except ImportError:
+    import sys
+    print("ChipTools is not installed on your system.")
+    sys.exit(1)
+
+project_root = os.path.dirname(__file__)
+
+# Create a new Project
+project = Project(root=project_root)
+
+# Configure project, you may wish to edit some of these settings depending
+# on which simulation/synthesis tools are installed on your system.
+config = {
+    'simulation_directory': 'simulation',
+    'synthesis_directory': 'synthesis',
+    'simulator': 'iverilog',
+    'synthesiser': 'vivado',
+    'part': 'xc7z030sbg485-2',
+}
+# The Project class provides an add_config or add_config_dict method. We use
+# the add_config_dict method here to load the config dictionary, you can set
+# individual configuration items using add_config.
+project.add_config_dict(**config)
+
+# Some unit tests have been written for the max_hold component and stored in
+# max_hold_tests.py. The Project class provides an 'add_unittest' method for
+# adding unit tests to the project, it expects a path to the unit test file.
+project.add_unittest('basic_unit_test.py')
+
+# The constraints are added to the project using the add_constraints method.
+# The optional 'flow' argument is used to explicitly identify which synthesis
+# flow the constraints are intended for (the default is to infer supported
+# flows from the file extension).
+# project.add_constraints('max_hold.xdc', flow='vivado')
+
+# Synthesis generics can be assigned via the add_generic command, in this
+# example we set the data_Width generic to 32:
+project.add_generic('data_width', 32)
+
+# Source files for the max_hold component are added to the project. The Project
+# 'add_file' method accepts a file path and library name, if no library is
+# specified it will default to 'work'. Other file attributes are available but
+# not covered in this example.
+project.add_file('axi_lite_slave_example.v', library='lib_example')
+
+# When adding the testbench file we supply a 'synthesise' attribute and set it
+# to 'False', this tells the synthesis tool not to try to synthesise this file.
+# If not specified, 'synthesise' will default to 'True'
+project.add_file(
+    'tb_axi_lite_slave_example.v',
+    library='lib_tb_example',
+    synthesise=False
+)
+
+if __name__ == '__main__':
+
+    interactive = True  # Set True to load the ChipTools CLI
+
+    if interactive:
+        # ChipTools provides a command line interface to allow you to perform
+        # actions on the project such as synthesis and simulation interactively.
+        # It can be launched by importing the CommandLine from chiptools.core.cli
+        # and executing the cmdloop() method - the project is passed to the
+        # CommandLine constructor. Launch the ChipTools command line with the
+        # project we just configured:
+        from chiptools.core.cli import CommandLine
+        CommandLine(project).cmdloop()
+    else:
+        # Run the automated unit tests on the project:
+        project.run_tests(tool_name='iverilog')
+        # Synthesise the project:
+        project.synthesise(
+            library='lib_example',
+            entity='axi_lite_slave_example',
+            tool_name='vivado'
+        )
