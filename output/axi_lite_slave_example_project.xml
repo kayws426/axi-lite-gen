@@ -7,12 +7,8 @@
 
     <unittest path='basic_unit_test.py'/>
 
-    <!-- Used by the ISE synthesis flow only -->
-    <constraints path='example.ucf' flow='ise'/>
-    <!-- Used by the Vivado synthesis flow only -->
-    <constraints path='example.xdc' flow='vivado'/>
-
-    <generic data_width='3'/>
+    <generic axi_data_width='32'/>
+    <generic axi_addr_width='16'/>
 
     <library name='lib_example'>
         <file path='axi_lite_slave_example.v'/>

@@ -13,19 +13,18 @@
     {% endfor %}
     {% endif %}
 {% endif %}
-    axi_lite_slave_{{name}} # (
+    axi_lite_slave_{{name}} #
+    (
 {% if parameters|length > 0 %}
         //// Generate-time parameters:
 {%+ for param in parameters %}
-        .{{ param.ppslug() }}({{ param.ppslug() if settings.stub_axi_nets }}){% if not loop.last %},{% endif %}
-
+        .{{ param.ppslug() }}({{ param.ppslug() if settings.stub_axi_nets }}),
 {% endfor %}
 {% endif %}
 {% if parameters|length > 0 %}
         //// Register Default Parameters
 {% for reg in registers %}
-        .DEFAULT_{{ reg.slug.upper() }}({{ reg.ppdefault() }}){% if not loop.last %},{% endif %}
-
+        .DEFAULT_{{ reg.slug.upper() }}({{ reg.ppdefault() }}),
 {% endfor %}
 {% endif %}
         //// Parameters of Axi Slave Bus Interface S_AXI
@@ -33,32 +32,32 @@
         .C_S_AXI_ADDR_WIDTH({{C_S_AXI_ADDR_WIDTH}}),
         .C_S_AXI_ADDR_MSB({{C_S_AXI_ADDR_MSB}}),
         .C_S_AXI_ADDR_LSB({{C_S_AXI_ADDR_LSB}})
-    ) axi_lite_slave_{{name}}_i (
+    ) axi_lite_slave_{{name}}_i_00 (
         //// AXI I/O Signals
         // NB: s_axi_aclk comes at end
         .s_axi_aresetn({% if settings.stub_axi_nets %}s_axi_aresetn{% endif %}),
-        .s_axi_awaddr({% if settings.stub_axi_nets %}axi_slave1_awaddr[C_S_AXI_ADDR_WIDTH-1:0]{% endif %}),
-        .s_axi_awprot({% if settings.stub_axi_nets %}axi_slave1_awprot[2:0]{% endif %}),
-        .s_axi_awvalid({% if settings.stub_axi_nets %}axi_slave1_awvalid{% endif %}),
-        .s_axi_awready({% if settings.stub_axi_nets %}axi_slave1_awready{% endif %}),
-        .s_axi_wdata({% if settings.stub_axi_nets %}axi_slave1_wdata[C_S_AXI_DATA_WIDTH-1:0]{% endif %}),
-        .s_axi_wstrb({% if settings.stub_axi_nets %}axi_slave1_wstrb[C_S_AXI_DATA_WIDTH/8-1:0]{% endif %}),
-        .s_axi_wvalid({% if settings.stub_axi_nets %}axi_slave1_wvalid{% endif %}),
-        .s_axi_wready({% if settings.stub_axi_nets %}axi_slave1_wready{% endif %}),
-        .s_axi_bresp({% if settings.stub_axi_nets %}axi_slave1_bresp[1:0]{% endif %}),
-        .s_axi_bvalid({% if settings.stub_axi_nets %}axi_slave1_bvalid{% endif %}),
-        .s_axi_bready({% if settings.stub_axi_nets %}axi_slave1_bready{% endif %}),
-        .s_axi_araddr({% if settings.stub_axi_nets %}axi_slave1_araddr[C_S_AXI_ADDR_WIDTH-1:0]{% endif %}),
-        .s_axi_arprot({% if settings.stub_axi_nets %}axi_slave1_arprot[2:0]{% endif %}),
-        .s_axi_arvalid({% if settings.stub_axi_nets %}axi_slave1_arvalid{% endif %}),
-        .s_axi_arready({% if settings.stub_axi_nets %}axi_slave1_arready{% endif %}),
-        .s_axi_rdata({% if settings.stub_axi_nets %}axi_slave1_rdata[C_S_AXI_DATA_WIDTH-1:0]{% endif %}),
-        .s_axi_rresp({% if settings.stub_axi_nets %}axi_slave1_rresp[1:0]{% endif %}),
-        .s_axi_rvalid({% if settings.stub_axi_nets %}axi_slave1_rvalid{% endif %}),
-        .s_axi_rready({% if settings.stub_axi_nets %}axi_slave1_rready{% endif %}),
+        .s_axi_awaddr({% if settings.stub_axi_nets %}s_axi_awaddr[C_S_AXI_ADDR_WIDTH-1:0]{% endif %}),
+        .s_axi_awprot({% if settings.stub_axi_nets %}s_axi_awprot[2:0]{% endif %}),
+        .s_axi_awvalid({% if settings.stub_axi_nets %}s_axi_awvalid{% endif %}),
+        .s_axi_awready({% if settings.stub_axi_nets %}s_axi_awready{% endif %}),
+        .s_axi_wdata({% if settings.stub_axi_nets %}s_axi_wdata[C_S_AXI_DATA_WIDTH-1:0]{% endif %}),
+        .s_axi_wstrb({% if settings.stub_axi_nets %}s_axi_wstrb[C_S_AXI_DATA_WIDTH/8-1:0]{% endif %}),
+        .s_axi_wvalid({% if settings.stub_axi_nets %}s_axi_wvalid{% endif %}),
+        .s_axi_wready({% if settings.stub_axi_nets %}s_axi_wready{% endif %}),
+        .s_axi_bresp({% if settings.stub_axi_nets %}s_axi_bresp[1:0]{% endif %}),
+        .s_axi_bvalid({% if settings.stub_axi_nets %}s_axi_bvalid{% endif %}),
+        .s_axi_bready({% if settings.stub_axi_nets %}s_axi_bready{% endif %}),
+        .s_axi_araddr({% if settings.stub_axi_nets %}s_axi_araddr[C_S_AXI_ADDR_WIDTH-1:0]{% endif %}),
+        .s_axi_arprot({% if settings.stub_axi_nets %}s_axi_arprot[2:0]{% endif %}),
+        .s_axi_arvalid({% if settings.stub_axi_nets %}s_axi_arvalid{% endif %}),
+        .s_axi_arready({% if settings.stub_axi_nets %}s_axi_arready{% endif %}),
+        .s_axi_rdata({% if settings.stub_axi_nets %}s_axi_rdata[C_S_AXI_DATA_WIDTH-1:0]{% endif %}),
+        .s_axi_rresp({% if settings.stub_axi_nets %}s_axi_rresp[1:0]{% endif %}),
+        .s_axi_rvalid({% if settings.stub_axi_nets %}s_axi_rvalid{% endif %}),
+        .s_axi_rready({% if settings.stub_axi_nets %}s_axi_rready{% endif %}),
         //// Memory Map
         {% for reg in registers %}
         .{{ reg.slug }}({{ reg.slug if settings.stub_nets }}),
         {% endfor %}
-        .s_axi_aclk({% if settings.stub_axi_nets %}axi_aclk{% endif %}) // s_axi_aclk is last to ensure no trailing comma
+        .s_axi_aclk({% if settings.stub_axi_nets %}s_axi_aclk{% endif %}) // s_axi_aclk is last to ensure no trailing comma
     );

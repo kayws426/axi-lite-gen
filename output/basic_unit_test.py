@@ -23,7 +23,7 @@ class AxiExampleTestBase(ChipToolsTest):
     # Testbench generics are defined in this dictionary.
     # In this example we set the 'width' generic to 32, it can be overridden
     # by your tests to check different configurations.
-    generics = {'data_width': 32}
+    generics = {'axi_data_width': 32, 'axi_addr_width': 16}
     # Specify the entity that this Test should target
     entity = 'tb_axi_lite_slave_example'
     # Specify the library that this Test should target
