@@ -1,3 +1,5 @@
+`timescale 1 ns / 1 ps
+
 module tb_axi_lite_slave_example #
     (
     parameter axi_data_width = 32,
@@ -29,14 +31,16 @@ module tb_axi_lite_slave_example #
     ** Registers / Wires
     ** ----------------------------------------------------------------------*/
     reg clock = 1, reset = 0;
-    reg [`axi_data_width-1:0] data;
-    reg [`axi_data_width-1:0] read_data;
     integer fileid;
     integer readCount;
     integer outFileId;
     integer firstCall = 1;
     integer lastCycle = 0;
     reg [`axi_data_width-1:0] inData = 0;
+
+    reg [`axi_data_width-1:0] opArg2 = 0;
+    reg [`axi_data_width-1:0] opArg1 = 0;
+    reg[32*8:0] opCodeString;
 
     reg start_tb = 0;
     reg axi_bus_free = 0;
@@ -113,7 +117,7 @@ module tb_axi_lite_slave_example #
     initial begin
         fileid = $fopen("input.txt", "r");
         outFileId = $fopen("output.txt", "w");
-        $display("axi_data_width is%d, axi_addr_width is%d, ", `axi_data_width, `axi_addr_width);
+        $display("axi_data_width is %0d, axi_addr_width is %0d", `axi_data_width, `axi_addr_width);
         if (fileid == 0) begin
             $display("Could not open file.");
             $finish;
@@ -132,31 +136,37 @@ module tb_axi_lite_slave_example #
     ** ----------------------------------------------------------------------*/
     always begin
         wait (start_tb);
-        if (!lastCycle) begin
-            readCount = $fscanf(fileid, "%b\n", inData);
+        readCount = $fscanf(fileid, "%s %X %X\n", opCodeString, opArg1, opArg2);
+        if (readCount == 2) begin
+            opArg2 = 0;
+        end else if (readCount == 1) begin
+            opArg1 = 0;
+            opArg2 = 0;
+        end else if (readCount == 0) begin
+            opCodeString = "nop";
+            opArg1 = 0;
+            opArg2 = 0;
         end
-        data <= inData;
+        // $display("readCount %d, opCodeString %s, opArg1 %d, opArg2 %d", readCount, opCodeString, opArg1, opArg2);
 
-        @(posedge clock);
-        write_register({14'd1025, 2'b00}, data); // reg 0
-        read_register({14'd1025, 2'b00}, read_data); // reg 0
 
-        @(posedge clock);
-        if (firstCall) begin
-            firstCall = 0;
-        end else begin
-            if (!lastCycle) begin
-                $fwrite(outFileId, "%b\n", read_data);
-                if ($feof(fileid)) begin
-                    $fclose(fileid);
-                    lastCycle = 1;
-                end
-            end else begin
-                $fwrite(outFileId, "%b\n", read_data);
-                $fflush();
-                $fclose(outFileId);
-                $finish;
-            end
+        if (opCodeString == "write") begin
+            task_write_addr(opArg1, opArg2); // addr data
+        end else if (opCodeString == "read") begin
+            task_read_addr(opArg1, opArg2); // addr data
+            $fwrite(outFileId, "%X\n", opArg2);
+        end else if (opCodeString == "wait") begin
+            task_wait(opArg1, opArg2); // repeat_count step_time(ns)
+        end else if (opCodeString == "wait_clock") begin
+            task_wait_clock(opArg1, opArg2); // clock_count
+        end
+
+        if ($feof(fileid)) begin
+            $fflush();
+            $fclose(fileid);
+            $fclose(outFileId);
+            $display("(%16t) finishing the simulation", $time);
+            $finish;
         end
     end
 
@@ -225,9 +235,12 @@ module tb_axi_lite_slave_example #
         .s_axi_aclk(s_axi_aclk) // s_axi_aclk is last to ensure no trailing comma
     );
 
-task read_register;
+/* ------------------------------------------------------------------------
+** task_read_addr
+** ----------------------------------------------------------------------*/
+task task_read_addr;
     input [C_S_AXI_ADDR_WIDTH:0] reg_addr;
-    output [C_S_AXI_DATA_WIDTH:0] data;
+    output [C_S_AXI_DATA_WIDTH:0] reg_data;
 
     begin
         wait (axi_bus_free);
@@ -240,8 +253,8 @@ task read_register;
         s_axi_rready = 1;
         // wait (s_axi_arready);
         wait (s_axi_rvalid);
-        $display("(%0t) Reading register [%0d] = 0x%0x", $time, s_axi_araddr, s_axi_rdata);
-        data = s_axi_rdata;
+        $display("(%16t) Reading address [%0d] = 0x%0x", $time, s_axi_araddr, s_axi_rdata);
+        reg_data = s_axi_rdata;
         @ (posedge s_axi_aclk);
         #1;
         s_axi_araddr = 'hz;
@@ -252,8 +265,10 @@ task read_register;
     end
 endtask
 
-
-task write_register;
+/* ------------------------------------------------------------------------
+** task_write_addr
+** ----------------------------------------------------------------------*/
+task task_write_addr;
     input [C_S_AXI_ADDR_WIDTH:0] reg_addr;
     input [C_S_AXI_DATA_WIDTH:0] reg_data;
 
@@ -261,7 +276,7 @@ task write_register;
         wait (axi_bus_free);
         axi_bus_free = 0;
         @ (posedge s_axi_aclk);
-        $display("(%0t) Writing register [%0d] = 0x%0x", $time, reg_addr, reg_data);
+        $display("(%16t) Writing address [%0d] = 0x%0x", $time, reg_addr, reg_data);
         #1;
         cs_signals[0] = 1;
         s_axi_awaddr = reg_addr;
@@ -284,5 +299,37 @@ task write_register;
         axi_bus_free = 1;
     end
 endtask
+
+/* ------------------------------------------------------------------------
+** task_wait
+** ----------------------------------------------------------------------*/
+task task_wait;
+    input [C_S_AXI_DATA_WIDTH:0] repeat_count;
+    input [C_S_AXI_DATA_WIDTH:0] step_time;
+
+    begin
+        if (step_time == 0) begin step_time = 1; end
+        $display("(%16t) Waiting for %d ns", $time, step_time * repeat_count);
+        repeat (repeat_count) begin
+            #(step_time); // unit: ns
+        end
+    end
+endtask
+
+/* ------------------------------------------------------------------------
+** task_wait_clock
+** ----------------------------------------------------------------------*/
+task task_wait_clock;
+    input [C_S_AXI_DATA_WIDTH:0] clock_count;
+    input [C_S_AXI_DATA_WIDTH:0] arg2;
+
+    begin
+        $display("(%16t) Waiting %d clocks", $time, clock_count);
+        repeat (clock_count) begin
+            @ (posedge s_axi_aclk);
+        end
+    end
+endtask
+
 
 endmodule

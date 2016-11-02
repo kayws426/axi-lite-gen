@@ -1,7 +1,7 @@
 <project>
     <config simulation_directory='simulation'/>
     <config synthesis_directory='synthesis'/>
-    <config simulator='iverilog'/>
+    <config simulator='vivado'/>
     <config synthesiser='vivado'/>
     <config part='xc7z030sbg485-2'/>
 

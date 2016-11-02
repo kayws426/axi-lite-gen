@@ -20,7 +20,7 @@ project = Project(root=project_root)
 config = {
     'simulation_directory': 'simulation',
     'synthesis_directory': 'synthesis',
-    'simulator': 'iverilog',
+    'simulator': 'vivado',
     'synthesiser': 'vivado',
     'part': 'xc7z030sbg485-2',
 }
@@ -29,8 +29,8 @@ config = {
 # individual configuration items using add_config.
 project.add_config_dict(**config)
 
-# Some unit tests have been written for the max_hold component and stored in
-# max_hold_tests.py. The Project class provides an 'add_unittest' method for
+# Some unit tests have been written for the component and stored in
+# basic_unit_test.py. The Project class provides an 'add_unittest' method for
 # adding unit tests to the project, it expects a path to the unit test file.
 project.add_unittest('basic_unit_test.py')
 
@@ -38,13 +38,13 @@ project.add_unittest('basic_unit_test.py')
 # The optional 'flow' argument is used to explicitly identify which synthesis
 # flow the constraints are intended for (the default is to infer supported
 # flows from the file extension).
-# project.add_constraints('max_hold.xdc', flow='vivado')
+# project.add_constraints('axi_lite_slave_example.xdc', flow='vivado')
 
 # Synthesis generics can be assigned via the add_generic command, in this
 # example we set the data_Width generic to 32:
 project.add_generic('data_width', 32)
 
-# Source files for the max_hold component are added to the project. The Project
+# Source files for the component are added to the project. The Project
 # 'add_file' method accepts a file path and library name, if no library is
 # specified it will default to 'work'. Other file attributes are available but
 # not covered in this example.
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         CommandLine(project).cmdloop()
     else:
         # Run the automated unit tests on the project:
-        project.run_tests(tool_name='iverilog')
+        project.run_tests(tool_name='vivado')
         # Synthesise the project:
         project.synthesise(
             library='lib_example',

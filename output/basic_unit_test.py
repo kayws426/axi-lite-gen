@@ -47,7 +47,6 @@ class AxiExampleTestBase(ChipToolsTest):
         pass
 
     def run_random_data(self, n):
-
         # Generate a list of n random integers
         self.values = [random.randint(0, 2**32-1) for i in range(n)]
 
@@ -55,9 +54,10 @@ class AxiExampleTestBase(ChipToolsTest):
         with open(self.input_path, 'w') as f:
             for value in self.values:
                 f.write(
-                    '{0}\n'.format(
-                        bin(value)[2:].zfill(32),  # write 32bit data
-                    )
+                    'write 1004 %08x\n' % (value),  # write addr_hex data_hex
+                )
+                f.write(
+                    'read  1004 0\n',  # read addr_hex [dummy_hex]
                 )
 
         # Run the simulation
@@ -70,20 +70,58 @@ class AxiExampleTestBase(ChipToolsTest):
             data = f.readlines()
         for valueIdx, value in enumerate(data):
             # testbench response
-            output_values.append(int(value, 2))  # Binary to integer
-
-        # Use Python to work out the expected result from the original imput
-        max_hold = [
-            max(self.values[:i+1]) for i in range(len(self.values))
-        ]
+            output_values.append(int(value, 16))  # hex to integer
 
         # Compare the expected result to what the Testbench returned:
-        self.assertListEqual(output_values, max_hold)
+        self.assertListEqual(self.values, output_values)
 
     def test_10_random_integers(self):
-        """Check the Max hold component using 10 random integers."""
+        """Check the component using 10 random integers."""
         self.run_random_data(10)
 
     def test_100_random_integers(self):
-        """Check the Max hold component using 100 random integers."""
+        """Check the component using 100 random integers."""
         self.run_random_data(100)
+
+    def test_example_program(self):
+        """Check for component using example program."""
+
+        log.info('== test_user_program starts.')
+        log.info('== Generate a list of n random integers')
+        # Generate a list of n random integers
+        self.values = [random.randint(0, 2**32-1) for i in range(10)]
+
+        with open(self.input_path, 'w') as f:
+            for value in self.values:
+                f.write(
+                    'write 1004 %08x\n' % (value),  # write addr_hex data_hex
+                )
+                f.write(
+                    'read  1004 0\n',  # read addr_hex [dummy_hex]
+                )
+                # f.write(
+                #     'wait %x 1\n' % (1000000),  # wait repeat_count_hex step_time_hex(ns)
+                # )
+            f.write(
+                'wait %x 1\n' % (1000000),  # wait repeat_count_hex step_time_hex(ns)
+            )
+            f.write(
+                'wait_clock %x\n' % (100),  # wait_clock_hex [dummy_hex]
+            )
+
+        # Run the simulation
+        return_code, stdout, stderr = self.simulate()
+        self.assertEqual(return_code, 0)
+
+        # Read the simulation output
+        output_values = []
+        with open(self.output_path, 'r') as f:
+            for value in f:
+                # testbench response
+                output_values.append(int(value, 16))  # Binary to integer
+
+        # Compare the expected result to what the Testbench returned:
+        self.assertListEqual(self.values, output_values)
+
+        log.info('== test_user_program ends.')
+
