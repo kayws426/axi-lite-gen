@@ -118,8 +118,8 @@ always @(posedge s_axi_aclk) begin
 {% for reg in registers %}
 {% if reg.write %}
 {% for word in reg.word_list() %}
-            {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'d{{ word[0] }}: begin
-                {{ reg.slug }}{{ word[2] }} <= s_axi_wdata{{ word[2] }};
+            {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'d{{ word.index }}: begin // byte_offset: {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'h{{ word.byte_offset_hex }}
+                {{ reg.slug }}{{ word.span }} <= s_axi_wdata{{ word.wdata_bus_span }};
             end
 {% endfor %}
 {% endif %}
@@ -145,8 +145,8 @@ always @(posedge s_axi_aclk) begin
 {% for reg in registers %}
 {% if reg.read %}
 {% for word in reg.word_list() %}
-        {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'d{{ word[0] }}: begin
-            reg_data_out <= {{ word[1] }};
+        {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'d{{ word.index }}: begin // byte_offset: {{C_S_AXI_ADDR_MSB-C_S_AXI_ADDR_LSB+1}}'h{{ word.byte_offset_hex }}
+            reg_data_out <= {{ word.rdata_full_width }};
         end
 {% endfor %}
 {% endif %}

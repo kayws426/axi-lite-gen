@@ -130,19 +130,41 @@ class Value():
         bottom = 0
         a = self.index
         span = None
+        bits = 0
+        rdata_full_width = None
+        wdata_bus_span = None
         while b > 0:
             if b < C_S_AXI_DATA_WIDTH:
                 if (self.bits == 1):
                     span = ""
                 else:
                     span = "[%d:%d]" % (bottom+b-1, bottom)
-                l.append((a, "{%d'd0, %s%s}" % (C_S_AXI_DATA_WIDTH-b, self.slug, span), span, b, bottom))
+                bits = b
+                rdata_full_width = "{%d'd0, %s%s}" % (C_S_AXI_DATA_WIDTH-b, self.slug, span)
             else:
                 if (self.bits == 1):
                     span = ""
                 else:
                     span = "[%d:%d]" % (bottom+C_S_AXI_DATA_WIDTH-1, bottom)
-                l.append((a, "%s%s" % (self.slug, span), span, b, bottom))
+                bits = min(b, C_S_AXI_DATA_WIDTH)
+                rdata_full_width = "%s%s" % (self.slug, span)
+            if bits == C_S_AXI_DATA_WIDTH:
+                wdata_bus_span = ""
+            else:
+                btm = int(bottom) % C_S_AXI_DATA_WIDTH
+                wdata_bus_span = "[%d:%d]" % (btm+bits-1, btm)
+
+            l.append(dict(
+                        index=a,
+                        index_hex="%x" % (a),
+                        span=span,
+                        b=b,
+                        bottom=bottom,
+                        byte_offset=a * 4,
+                        byte_offset_hex="%x" % (a * 4),
+                        rdata_full_width=rdata_full_width,
+                        wdata_bus_span=wdata_bus_span,
+                        bits=bits))
             a += 1
             b -= C_S_AXI_DATA_WIDTH
             bottom += C_S_AXI_DATA_WIDTH
